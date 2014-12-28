@@ -16,7 +16,7 @@ namespace CKAN
 
         #region Fields and Properties
 
-        private static readonly ILog log = LogManager.GetLogger(typeof(KSP));
+        private static readonly ILog log = LogManager.GetLogger(typeof(KSP)); 
 
         private readonly string gamedir;
         private KSPVersion version;
