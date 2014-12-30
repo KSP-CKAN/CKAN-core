@@ -564,8 +564,7 @@ namespace Tests.CKAN.Relationships
             });
 
             list.Add(depender.identifier);
-            list.Add(dependant.identifier);
-            list.Add(other_dependant.identifier);
+
             AddToRegistry(depender, dependant, other_dependant);
 
             var relationship_resolver = new RelationshipResolver(list, options, registry, null);
@@ -594,8 +593,7 @@ namespace Tests.CKAN.Relationships
                 new RelationshipDescriptor {name = dependant.identifier, min_version = dep_min}
             });
             list.Add(depender.identifier);
-            list.Add(dependant.identifier);
-            list.Add(other_dependant.identifier);
+
             AddToRegistry(depender, dependant, other_dependant);
 
             var relationship_resolver = new RelationshipResolver(list, options, registry, null);
@@ -624,8 +622,7 @@ namespace Tests.CKAN.Relationships
                 new RelationshipDescriptor {name = dependant.identifier, max_version = dep_max}
             });
             list.Add(depender.identifier);
-            list.Add(dependant.identifier);
-            list.Add(other_dependant.identifier);
+
             AddToRegistry(depender, dependant, other_dependant);
 
             var relationship_resolver = new RelationshipResolver(list, options, registry, null);
@@ -654,8 +651,7 @@ namespace Tests.CKAN.Relationships
                 new RelationshipDescriptor {name = dependant.identifier, min_version = dep_min, max_version = dep_max}
             });
             list.Add(depender.identifier);
-            list.Add(dependant.identifier);
-            list.Add(other_dependant.identifier);
+
             AddToRegistry(depender, dependant, other_dependant);
 
             var relationship_resolver = new RelationshipResolver(list, options, registry, null);
