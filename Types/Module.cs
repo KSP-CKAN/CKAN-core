@@ -181,7 +181,37 @@ namespace CKAN
             {
                 return false;
             }
-            return mod1.conflicts.Any(conflict => mod2.ProvidesList.Contains(conflict.name));
+            return mod1.conflicts.Any(conflict => mod2.Match(conflict));
+        }
+
+        /// <summary>
+        ///     Check if a Module is a match for a RelationshipDescriptor
+        /// </summary>
+        /// <param name="descriptor"></param>
+        /// <returns></returns>
+        internal bool Match(RelationshipDescriptor descriptor)
+        {
+            if (identifier == descriptor.name)
+            {
+                if (descriptor.version != null)
+                {
+                    return ((Version)descriptor.version).IsEqualTo(version);
+                }
+                else
+                {
+                    if ((descriptor.min_version != null) && ((Version)descriptor.min_version).IsGreaterThan(version))
+                    {
+                        return false;
+                    }
+                    if ((descriptor.max_version != null) && ((Version)descriptor.max_version).IsLessThan(version))
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            //Fall back to provides.
+            return ProvidesList.Contains(descriptor.name);
         }
 
         /// <summary>

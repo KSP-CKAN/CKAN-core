@@ -206,7 +206,7 @@ namespace Tests.CKAN.Relationships
         [Test]
         [Category("Version")]
         [Explicit("Versions relationships not implemented")]
-        [TestCase("1.0", "2.0")]
+        [TestCase("3.0", "2.0")]
         public void Constructor_WithConflictingModulesVersionMax_DoesNotThrows(string ver, string conf_max)
         {
             var list = new List<string>();
