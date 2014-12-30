@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using CKAN;
 using NUnit.Framework;
 using Tests;
@@ -7,6 +9,14 @@ namespace CKANTests
     [TestFixture]
     public class Module
     {
+        private RandomModuleGenerator generator;
+
+        [SetUp]
+        public void Setup()
+        {
+            generator = new RandomModuleGenerator(new Random(1492));
+        }
+
         [Test]
         public void CompatibleWith()
         {
@@ -112,6 +122,39 @@ namespace CKANTests
                 CkanModule.FromJson(TestData.FutureMetaData());
             });
 
+        }
+        //without provides
+        [Test]
+        [Category("Version")]
+        [Explicit("Versions relationships not implemented")]
+        [TestCase("1.0", null, null, null, Result = true)]
+        [TestCase("1.0", "0.5", null, null, Result = false)]
+        [TestCase("1.0", "1.0", null, null, Result = true)]
+        [TestCase("1.0", "2.0", null, null, Result = false)]
+        [TestCase("1.0", null, "0.5", null, Result = true)]
+        [TestCase("1.0", null, "1.0", null, Result = true)]
+        [TestCase("1.0", null, "2.0", null, Result = false)]
+        [TestCase("1.0", null, null, "0.5", Result = false)]
+        [TestCase("1.0", null, null, "1.0", Result = true)]
+        [TestCase("1.0", null, null, "2.0", Result = true)]
+        [TestCase("2.0", null, "0.5", "1.0", Result = false)]
+        [TestCase("2.0", null, "0.5", "2.0", Result = true)]
+        [TestCase("2.0", null, "0.5", "3.0", Result = true)]
+        [TestCase("2.0", null, "2.0", "2.0", Result = true)]
+        [TestCase("2.0", null, "2.0", "3.0", Result = true)]
+        [TestCase("2.0", null, "3.0", "4.0", Result = false)]
+        public bool ConflictsWith(string ver, string conf, string conf_min, string conf_max)
+        {
+            var mod_a = generator.GeneratorRandomModule(version: new CKAN.Version(ver));
+            var mod_b = generator.GeneratorRandomModule(conflicts: new List<RelationshipDescriptor>
+            {
+                new RelationshipDescriptor {name=mod_a.identifier, version=conf, min_version=conf_min, max_version=conf_max}
+            });
+
+            bool direct = mod_a.ConflictsWith(mod_b);
+            Assert.AreEqual(direct, mod_b.ConflictsWith(mod_a));
+
+            return direct;
         }
     }
 }
