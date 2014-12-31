@@ -126,7 +126,6 @@ namespace CKANTests
         //without provides
         [Test]
         [Category("Version")]
-        [Explicit("Versions relationships not implemented")]
         [TestCase("1.0", null, null, null, Result = true)]
         [TestCase("1.0", "0.5", null, null, Result = false)]
         [TestCase("1.0", "1.0", null, null, Result = true)]
