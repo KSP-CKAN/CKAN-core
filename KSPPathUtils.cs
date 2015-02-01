@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
-using log4net;dsdsdsd
+using log4net;
 
 namespace CKAN
 {
