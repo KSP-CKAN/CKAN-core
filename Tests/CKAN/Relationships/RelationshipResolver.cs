@@ -57,7 +57,6 @@ namespace Tests.CKAN.Relationships
 
         [Test]
         [Category("Version")]
-        [Explicit("Versions relationships not implemented")]
         public void Constructor_WithConflictingModulesVersion_Throws()
         {
             var list = new List<string>();
@@ -80,7 +79,6 @@ namespace Tests.CKAN.Relationships
 
         [Test]
         [Category("Version")]
-        [Explicit("Versions relationships not implemented")]
         [TestCase("1.0", "0.5")]
         [TestCase("1.0", "1.0")]
         public void Constructor_WithConflictingModulesVersionMin_Throws(string ver, string conf_min)
@@ -105,7 +103,6 @@ namespace Tests.CKAN.Relationships
 
         [Test]
         [Category("Version")]
-        [Explicit("Versions relationships not implemented")]
         [TestCase("1.0", "2.0")]
         [TestCase("1.0", "1.0")]
         public void Constructor_WithConflictingModulesVersionMax_Throws(string ver, string conf_max)
@@ -130,7 +127,6 @@ namespace Tests.CKAN.Relationships
 
         [Test]
         [Category("Version")]
-        [Explicit("Versions relationships not implemented")]
         [TestCase("1.0", "0.5", "2.0")]
         [TestCase("1.0", "1.0", "2.0")]
         [TestCase("1.0", "0.5", "1.0")]
@@ -156,7 +152,6 @@ namespace Tests.CKAN.Relationships
 
         [Test]
         [Category("Version")]
-        [Explicit("Versions relationships not implemented")]
         [TestCase("1.0", "0.5")]
         [TestCase("1.0", "2.0")]
         public void Constructor_WithNonConflictingModulesVersion_DoesNotThrows(string ver, string conf)
@@ -181,7 +176,6 @@ namespace Tests.CKAN.Relationships
 
         [Test]
         [Category("Version")]
-        [Explicit("Versions relationships not implemented")]
         [TestCase("1.0", "2.0")]
         public void Constructor_WithConflictingModulesVersionMin_DoesNotThrows(string ver, string conf_min)
         {
@@ -205,8 +199,7 @@ namespace Tests.CKAN.Relationships
 
         [Test]
         [Category("Version")]
-        [Explicit("Versions relationships not implemented")]
-        [TestCase("1.0", "2.0")]
+        [TestCase("3.0", "2.0")]
         public void Constructor_WithConflictingModulesVersionMax_DoesNotThrows(string ver, string conf_max)
         {
             var list = new List<string>();
@@ -229,7 +222,6 @@ namespace Tests.CKAN.Relationships
 
         [Test]
         [Category("Version")]
-        [Explicit("Versions relationships not implemented")]
         [TestCase("1.0", "2.0", "3.0")]
         [TestCase("4.0", "2.0", "3.0")]
         public void Constructor_WithConflictingModulesVersionMinMax_DoesNotThrows(string ver, string conf_min, string conf_max)
@@ -564,8 +556,7 @@ namespace Tests.CKAN.Relationships
             });
 
             list.Add(depender.identifier);
-            list.Add(dependant.identifier);
-            list.Add(other_dependant.identifier);
+
             AddToRegistry(depender, dependant, other_dependant);
 
             var relationship_resolver = new RelationshipResolver(list, options, registry, null);
@@ -594,8 +585,7 @@ namespace Tests.CKAN.Relationships
                 new RelationshipDescriptor {name = dependant.identifier, min_version = dep_min}
             });
             list.Add(depender.identifier);
-            list.Add(dependant.identifier);
-            list.Add(other_dependant.identifier);
+
             AddToRegistry(depender, dependant, other_dependant);
 
             var relationship_resolver = new RelationshipResolver(list, options, registry, null);
@@ -624,8 +614,7 @@ namespace Tests.CKAN.Relationships
                 new RelationshipDescriptor {name = dependant.identifier, max_version = dep_max}
             });
             list.Add(depender.identifier);
-            list.Add(dependant.identifier);
-            list.Add(other_dependant.identifier);
+
             AddToRegistry(depender, dependant, other_dependant);
 
             var relationship_resolver = new RelationshipResolver(list, options, registry, null);
@@ -654,8 +643,7 @@ namespace Tests.CKAN.Relationships
                 new RelationshipDescriptor {name = dependant.identifier, min_version = dep_min, max_version = dep_max}
             });
             list.Add(depender.identifier);
-            list.Add(dependant.identifier);
-            list.Add(other_dependant.identifier);
+
             AddToRegistry(depender, dependant, other_dependant);
 
             var relationship_resolver = new RelationshipResolver(list, options, registry, null);
