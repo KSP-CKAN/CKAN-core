@@ -498,6 +498,20 @@ namespace CKAN
             }
         }
 
+
+        /// <summary>
+        /// Checks whether the mod specified by string ID is compatible with the specified KSP version.
+        /// </summary>
+        /// <param name="module">String ID of the mod (name).</param>
+        /// <param name="ksp_version">KSP version to check against.</param>
+        /// <returns></returns>
+        public bool IsModCompatible(string module, KSPVersion ksp_version)
+        {
+            CkanModule mod = available_modules[module].Latest(ksp_version);
+
+            return (mod != null);
+        }
+
         /// <summary>
         ///     Returns the latest available version of a module that
         ///     satisifes the specified version. Takes into account module 'provides',

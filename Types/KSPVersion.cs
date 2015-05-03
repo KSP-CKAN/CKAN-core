@@ -64,16 +64,25 @@ namespace CKAN {
             return version != null && Regex.IsMatch (version, @"^\d+\.\d+\.\d+$");
         }
 
-        public bool IsAny() {
-            return version == null;
+        public bool IsAny() 
+        {
+            return (version == null || version.Equals("any", StringComparison.InvariantCultureIgnoreCase));
         }
 
         public bool IsNotAny() {
             return ! IsAny ();
         }
 
-        public string Version() {
-            return version;
+        public string Version() 
+        {
+            if (version == null || version == "")
+            {
+                return "Any";
+            }
+            else
+            {
+                return version;
+            }
         }
 
         // Private for now, since we can't guarnatee public code will only call
@@ -131,8 +140,10 @@ namespace CKAN {
         }
 
         // "any" -> null
-        private static string AnyToNull(string v) {
-            if (v != null && v == "any") {
+        private static string AnyToNull(string v) 
+        {
+            if (v != null && v.Equals("any", StringComparison.InvariantCultureIgnoreCase))
+            {
                 return null;
             }
             return v;
@@ -140,7 +151,7 @@ namespace CKAN {
 
         // Throws on error.
         private void Validate() {
-            if (version == null || IsShortVersion() || IsLongVersion()) {
+            if (IsShortVersion() || IsLongVersion() || IsAny()) {
                 return;
             }
             throw new BadKSPVersionException (version);
