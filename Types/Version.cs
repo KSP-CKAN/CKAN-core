@@ -82,52 +82,6 @@ namespace CKAN {
             // Epochs are the same. Do the dance described in
             // https://github.com/KSP-CKAN/CKAN/blob/master/Spec.md#version-ordering
 
-            string[] thisVersion =
-                version.Contains(".")
-                    ? version.Split('.')
-                    : new string[] { "" }
-                ;
-
-            string[] thatVersion =
-                that.version.Contains(".")
-                    ? that.version.Split('.')
-                    : new string[] { "" }
-                ;
-
-            // catches the 1.2.3 and 1.2 comparison differences
-            int maxSize =
-                thisVersion.Length < thatVersion.Length
-                        ? thisVersion.Length
-                        : thatVersion.Length
-                        ;
-
-            int retVal;
-            int thisFragInt, thatFragInt;
-
-            // ingore first since that's the epoch
-            for (int x = 1; x < maxSize; x++)
-            {
-                // attempt int conversion
-                if (int.TryParse(thisVersion[x], out thisFragInt) && int.TryParse(thatVersion[x], out thatFragInt))
-                {
-                    // check if equal, if not return
-                    if (thisFragInt > thatFragInt) { return 1; }
-                    else if (thisFragInt < thatFragInt) { return -1; }
-                }
-                else
-                {
-                    // not ints, toss exception and default to string compare
-                    retVal = String.Compare(thisVersion[x], thatVersion[x]);
-                    if (retVal != 0) { return retVal; }
-                }
-            }
-
-            // whover's got the most segments wins
-            if (thisVersion.Length < thatVersion.Length) { return -1; }
-            else if (thisVersion.Length > thatVersion.Length) { return 1; }
-            else { return 0; }
-  
-            /*
             Comparison comp;
             comp.remainder1 = version;
             comp.remainder2 = that.version;
@@ -164,7 +118,7 @@ namespace CKAN {
             }
 
             return 1;
-            */
+
         }
 
         public bool IsEqualTo(Version that) {
