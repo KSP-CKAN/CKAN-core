@@ -10,11 +10,14 @@ namespace CKAN {
     [Serializable]
     [JsonConverter(typeof(JsonSimpleStringConverter))]
     public class Version : IComparable<Version> {
+        private bool _valid;
         private int epoch;
         private string version;
         private string orig_string;
         // static readonly ILog log = LogManager.GetLogger(typeof(RegistryManager));
         public const string AutodetectedDllString = "autodetected dll";
+        private const string VERSION_REG_EX_STRING = @"^[v]?([\d][:])?[\d]+(\.?[\da-zA-Z]+)*$";
+
 
         public int EpochPart
         {
@@ -26,18 +29,64 @@ namespace CKAN {
             get { return version; }
         }
 
+        public bool Valid { get{ return _valid; } }
+
+        /*
         public struct Comparison {
             public int compare_to;
             public string remainder1;
             public string remainder2;
         }
+        */
 
         /// <summary>
         /// Creates a new version object from the `ToString()` representation of anything!
         /// </summary>
         public Version (string version) {
             orig_string = version;
+            _valid = false; // bad until proven good, simplifies error trapping
 
+            // determine if we're looking at a wellformatted version string
+            // NOTE: processing is done with lower case to simplify processing
+            string workingCopy = orig_string.ToLower();
+            if (Regex.IsMatch(workingCopy, VERSION_REG_EX_STRING))
+            {
+
+                // trim leading 'v'
+                if (workingCopy[0] == 'v') { workingCopy = workingCopy.Substring(1); }
+
+                // check if it has an epoch
+                if (version.Contains(":"))
+                {
+                    // does break into two pieces
+                    string[] fragments = version.Split(':');
+
+                    // should be exactly two fragments
+                    if(fragments.Length == 2)
+                    {
+                        // first fragement should be an integer
+                        if(int.TryParse(fragments[0], out epoch))
+                        {
+                            _valid = true;
+                            this.version = fragments[1];
+                        }
+                    }
+                }
+                else
+                {
+                    _valid = true;
+                    this.version = workingCopy;
+                }
+            }
+
+            // catch the bad case
+            // it's not well formatted, so epoch must be 0, and version is whatever the original string is
+            if(!_valid)
+            {
+                this.version = orig_string;
+                epoch = 0;
+            }
+            /*
             Match match = Regex.Match (
                 version,
                 @"^(?:(?<epoch>[0-9]+):)?(?<version>.*)$"
@@ -49,6 +98,7 @@ namespace CKAN {
             }
 
             this.version = match.Groups["version"].Value;
+            */
         }
 
         override public string ToString() {
@@ -67,6 +117,90 @@ namespace CKAN {
         /// </summary>
 
         public int CompareTo(Version that) {
+
+            // check for invalid strings
+            if (Valid)
+            {
+                if (that.Valid)
+                {
+                    // sanity check, see if both are equal
+                    if (that.epoch == epoch && that.version == version)
+                    {
+                        return 0;
+                    }
+
+                    // Compare epochs first.
+                    if (epoch < that.epoch)
+                    {
+                        return -1;
+                    }
+                    else if (epoch > that.epoch)
+                    {
+                        return 1;
+                    }
+
+                    // epocs the same, so examine the version number
+
+                    // break apart string by "." into segments
+                    string[] thisVersion =
+                        version.Contains(".")
+                            ? version.Split('.')
+                            : new string[] { "" }
+                        ;
+
+                    string[] thatVersion =
+                        that.version.Contains(".")
+                            ? that.version.Split('.')
+                            : new string[] { "" }
+                        ;
+
+                    // catches the 1.2.3 and 1.2 comparison differences
+                    int maxSize =
+                        thisVersion.Length < thatVersion.Length
+                                ? thisVersion.Length
+                                : thatVersion.Length
+                                ;
+
+                    int retVal;
+                    int thisFragInt, thatFragInt;
+
+                    // ingore first since that's the epoch
+                    for (int x = 0; x < maxSize; x++)
+                    {
+                        // attempt int conversion
+                        if (int.TryParse(thisVersion[x], out thisFragInt) && int.TryParse(thatVersion[x], out thatFragInt))
+                        {
+                            // check if equal, if not return
+                            if (thisFragInt > thatFragInt) { return 1; }
+                            else if (thisFragInt < thatFragInt) { return -1; }
+                        }
+                        else
+                        {
+                            // not ints, toss exception and default to string compare
+                            retVal = String.Compare(thisVersion[x], thatVersion[x]);
+                            if (retVal != 0) { return retVal; }
+                        }
+                    }
+
+                    // whover's got the most segments wins
+                    if (thisVersion.Length < thatVersion.Length) { return -1; }
+                    else if (thisVersion.Length > thatVersion.Length) { return 1; }
+
+                    // if we're here, they must be equal
+                    else { return 0; }
+                }
+                // this is valid, that's not, so this one wins.
+                else { return 1; }
+            }
+            else if(that.Valid)
+            {
+                // that's valid, so that wins
+                return -1;
+            }
+            // defaults to string compare if both aren't valid
+            else { return String.Compare(version, that.version); }
+
+            /*
 
             if (that.epoch == epoch && that.version == version) {
                 return 0;
@@ -119,6 +253,7 @@ namespace CKAN {
 
             return 1;
 
+             */
         }
 
         public bool IsEqualTo(Version that) {
@@ -137,6 +272,7 @@ namespace CKAN {
         /// Compare the leading non-numerical parts of two strings
         /// </summary>
        
+        /*
         internal static Comparison StringComp(string v1, string v2)
         {
             var comp = new Comparison {remainder1 = "", remainder2 = ""};
@@ -176,11 +312,13 @@ namespace CKAN {
             comp.compare_to = String.Compare(str1, str2);
             return comp;
         }
+        */
 
         /// <summary>
         /// Compare the leading numerical parts of two strings
         /// </summary>
 
+        /*
         internal static Comparison NumComp(string v1, string v2)
         {
             var comp = new Comparison {remainder1 = "", remainder2 = ""};
@@ -225,6 +363,7 @@ namespace CKAN {
             comp.compare_to = integer1.CompareTo(integer2);
             return comp;
         }
+        */
     }
 
     /// <summary>
