@@ -846,6 +846,17 @@ namespace CKAN
         }
 
         /// <summary>
+        /// Gets the installed version of a mod. Returns null if provided or autodetected. 
+        /// </summary>
+        /// <param name="mod_identifer"></param>
+        /// <returns></returns>
+        public Module GetInstalledVersion(string mod_identifer)
+        {
+            InstalledModule installedModule;
+            return installed_modules.TryGetValue(mod_identifer, out installedModule) ? installedModule.Module : null;
+        }
+
+        /// <summary>
         ///     Check if a mod is installed (either via CKAN, DLL, or virtually)
         /// </summary>
         /// <returns><c>true</c>, if installed<c>false</c> otherwise.</returns>
