@@ -388,7 +388,7 @@ namespace CKAN
 
         public bool IsConsistant
         {
-            get { return conflicts.Any(); }
+            get { return !conflicts.Any(); }
         }
 
         internal Relationship ReasonFor(CkanModule mod)
