@@ -73,7 +73,7 @@ namespace Tests.CKAN.Relationships
             var mod_a = generator.GeneratorRandomModule();
             var mod_b = generator.GeneratorRandomModule(conflicts: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name=mod_a.identifier, version=mod_a.version.ToString()}
+                new RelationshipDescriptor {name=mod_a.identifier, version=mod_a.version}
             });
 
             list.Add(mod_a.identifier);
@@ -98,7 +98,7 @@ namespace Tests.CKAN.Relationships
             var mod_a = generator.GeneratorRandomModule(version: new Version(ver));
             var mod_b = generator.GeneratorRandomModule(conflicts: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name=mod_a.identifier, min_version=conf_min}
+                new RelationshipDescriptor {name=mod_a.identifier, min_version=new Version(conf_min)}
             });
 
             list.Add(mod_a.identifier);
@@ -123,7 +123,7 @@ namespace Tests.CKAN.Relationships
             var mod_a = generator.GeneratorRandomModule(version: new Version(ver));
             var mod_b = generator.GeneratorRandomModule(conflicts: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name=mod_a.identifier, max_version=conf_max}
+                new RelationshipDescriptor {name=mod_a.identifier, max_version=new Version(conf_max)}
             });
 
             list.Add(mod_a.identifier);
@@ -149,7 +149,7 @@ namespace Tests.CKAN.Relationships
             var mod_a = generator.GeneratorRandomModule(version: new Version(ver));
             var mod_b = generator.GeneratorRandomModule(conflicts: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name=mod_a.identifier, min_version=conf_min, max_version=conf_max}
+                new RelationshipDescriptor {name=mod_a.identifier, min_version=new Version(conf_min), max_version=new Version(conf_max)}
             });
 
             list.Add(mod_a.identifier);
@@ -174,7 +174,7 @@ namespace Tests.CKAN.Relationships
             var mod_a = generator.GeneratorRandomModule(version: new Version(ver));
             var mod_b = generator.GeneratorRandomModule(conflicts: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name=mod_a.identifier, version=conf}
+                new RelationshipDescriptor {name=mod_a.identifier, version=new Version(conf)}
             });
 
             list.Add(mod_a.identifier);
@@ -198,7 +198,7 @@ namespace Tests.CKAN.Relationships
             var mod_a = generator.GeneratorRandomModule(version: new Version(ver));
             var mod_b = generator.GeneratorRandomModule(conflicts: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name=mod_a.identifier, min_version="2.0"}
+                new RelationshipDescriptor {name=mod_a.identifier, min_version=new Version(conf_min)}
             });
 
             list.Add(mod_a.identifier);
@@ -222,7 +222,7 @@ namespace Tests.CKAN.Relationships
             var mod_a = generator.GeneratorRandomModule(version: new Version(ver));
             var mod_b = generator.GeneratorRandomModule(conflicts: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name=mod_a.identifier, max_version=conf_max}
+                new RelationshipDescriptor {name=mod_a.identifier, max_version=new Version(conf_max)}
             });
 
             list.Add(mod_a.identifier);
@@ -247,7 +247,7 @@ namespace Tests.CKAN.Relationships
             var mod_a = generator.GeneratorRandomModule(version: new Version(ver));
             var mod_b = generator.GeneratorRandomModule(conflicts: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name=mod_a.identifier, min_version=conf_min, max_version=conf_max}
+                new RelationshipDescriptor {name=mod_a.identifier, min_version=new Version(conf_min), max_version=new Version(conf_max)}
             });
 
             list.Add(mod_a.identifier);
@@ -496,7 +496,7 @@ namespace Tests.CKAN.Relationships
             var dependant = generator.GeneratorRandomModule(version: new Version(ver));
             var depender = generator.GeneratorRandomModule(depends: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name = dependant.identifier, version = dep}
+                new RelationshipDescriptor {name = dependant.identifier, version = new Version(dep)}
             });
             list.Add(depender.identifier);
             list.Add(dependant.identifier);
@@ -520,7 +520,7 @@ namespace Tests.CKAN.Relationships
             var dependant = generator.GeneratorRandomModule(version: new Version(ver));
             var depender = generator.GeneratorRandomModule(depends: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name = dependant.identifier, min_version = dep_min}
+                new RelationshipDescriptor {name = dependant.identifier, min_version = new Version(dep_min)}
             });
             list.Add(depender.identifier);
             list.Add(dependant.identifier);
@@ -544,7 +544,7 @@ namespace Tests.CKAN.Relationships
             var dependant = generator.GeneratorRandomModule(version: new Version(ver));
             var depender = generator.GeneratorRandomModule(depends: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name = dependant.identifier, max_version = dep_max}
+                new RelationshipDescriptor {name = dependant.identifier, max_version = new Version(dep_max)}
             });
             list.Add(depender.identifier);
             list.Add(dependant.identifier);
@@ -569,7 +569,10 @@ namespace Tests.CKAN.Relationships
             var dependant = generator.GeneratorRandomModule(version: new Version(ver));
             var depender = generator.GeneratorRandomModule(depends: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name = dependant.identifier, min_version = dep_max}
+                new RelationshipDescriptor {
+                    name = dependant.identifier,
+                    min_version = new Version(dep_min),
+                    max_version = new Version(dep_max)}
             });
             list.Add(depender.identifier);
             list.Add(dependant.identifier);
@@ -596,7 +599,7 @@ namespace Tests.CKAN.Relationships
 
             var depender = generator.GeneratorRandomModule(depends: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name = dependant.identifier, version = dep}
+                new RelationshipDescriptor {name = dependant.identifier, version = new Version(dep)}
             });
 
             list.Add(depender.identifier);
@@ -627,7 +630,7 @@ namespace Tests.CKAN.Relationships
 
             var depender = generator.GeneratorRandomModule(depends: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name = dependant.identifier, min_version = dep_min}
+                new RelationshipDescriptor {name = dependant.identifier, min_version = new Version(dep_min)}
             });
             list.Add(depender.identifier);
             list.Add(dependant.identifier);
@@ -657,11 +660,9 @@ namespace Tests.CKAN.Relationships
 
             var depender = generator.GeneratorRandomModule(depends: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name = dependant.identifier, max_version = dep_max}
+                new RelationshipDescriptor {name = dependant.identifier, max_version = new Version(dep_max)}
             });
             list.Add(depender.identifier);
-            list.Add(dependant.identifier);
-            list.Add(other_dependant.identifier);
             AddToRegistry(depender, dependant, other_dependant);
 
             var relationship_resolver = new RelationshipResolver(list, options, registry, null);
@@ -687,7 +688,7 @@ namespace Tests.CKAN.Relationships
 
             var depender = generator.GeneratorRandomModule(depends: new List<RelationshipDescriptor>
             {
-                new RelationshipDescriptor {name = dependant.identifier, min_version = dep_min, max_version = dep_max}
+                new RelationshipDescriptor {name = dependant.identifier, min_version = new Version(dep_min), max_version = new Version(dep_max)}
             });
             list.Add(depender.identifier);
             list.Add(dependant.identifier);
