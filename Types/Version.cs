@@ -385,6 +385,26 @@ namespace CKAN {
         {
             return CompareTo(other);
         }
+
+        public static bool operator <(Version v1, Version v2)
+        {
+            return v1.CompareTo(v2) < 0;
+        }
+
+        public static bool operator <=(Version v1, Version v2)
+        {
+            return v1.CompareTo(v2) <= 0;
+        }
+
+        public static bool operator >(Version v1, Version v2)
+        {
+            return v1.CompareTo(v2) > 0;
+        }
+
+        public static bool operator >=(Version v1, Version v2)
+        {
+            return v1.CompareTo(v2) >= 0;
+        }
     }
 
     /// <summary>
