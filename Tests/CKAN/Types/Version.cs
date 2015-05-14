@@ -63,8 +63,8 @@ namespace CKANTests
         [Test]
         public void AGExt()
         {
-            var v1 = new CKAN.Version("1.20");
-            var v2 = new CKAN.Version("1.22a");
+            var v1 = new CKAN.Version("1.2b");
+            var v2 = new CKAN.Version("1.12a");
 
             Assert.That(v2.IsGreaterThan(v1));
         }
