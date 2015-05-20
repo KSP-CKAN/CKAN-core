@@ -95,16 +95,24 @@ namespace CKAN
 
         public static int Update(RegistryManager registry_manager, KSP ksp, IUser user, Boolean clear = true, Uri repo = null)
         {
-            // Use our default repo, unless we've been told otherwise.
+            // Use all repositories, unless we've been told otherwise.
             if (repo == null)
             {
-                repo = default_ckan_repo;
+                foreach(var r in ksp.Registry.Repositories)
+                {
+                    UpdateRegistry(r.Value.uri, registry_manager.registry, ksp, user, clear);
+
+                    // Save our changes.
+                    registry_manager.Save();
+                }
             }
+            else
+            {
+                UpdateRegistry(repo, registry_manager.registry, ksp, user, clear);
 
-            UpdateRegistry(repo, registry_manager.registry, ksp, user, clear);
-
-            // Save our changes!
-            registry_manager.Save();
+                // Save our changes.
+                registry_manager.Save();
+            }
 
             // Return how many we got!
             return registry_manager.registry.Available(ksp.Version()).Count;
