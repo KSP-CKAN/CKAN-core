@@ -1,3 +1,5 @@
+#define NEW_COMPARE
+
 using System;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
@@ -10,11 +12,17 @@ namespace CKAN {
     [Serializable]
     [JsonConverter(typeof(JsonSimpleStringConverter))]
     public class Version : IComparable<Version> {
-        private readonly int epoch;
+        private bool _valid = false;
+        private readonly int epoch = 0;
         private readonly string version;
         private readonly string orig_string;
+
+        internal readonly string[] _fragments;
+
         // static readonly ILog log = LogManager.GetLogger(typeof(RegistryManager));
         public const string AutodetectedDllString = "autodetected dll";
+
+        private const string VERSION_REG_EX_STRING = @"^[vV]?((?:<epoch>[\d]+)[:])?(?:<version>[\d]+(\.?[\w]+)*)$";
 
         public int EpochPart
         {
@@ -26,11 +34,7 @@ namespace CKAN {
             get { return version; }
         }
 
-        public struct Comparison {
-            public int compare_to;
-            public string remainder1;
-            public string remainder2;
-        }
+        public bool Valid { get{ return _valid; } }
 
         /// <summary>
         /// Creates a new version object from the `ToString()` representation of anything!
@@ -38,17 +42,33 @@ namespace CKAN {
         public Version (string version) {
             orig_string = version;
 
-            Match match = Regex.Match (
-                version,
-                @"^(?:(?<epoch>[0-9]+):)?(?<version>.*)$"
-            );
+            // determine if we're looking at a wellformatted version string
+            Match match = Regex.Match(version, VERSION_REG_EX_STRING, RegexOptions.ECMAScript);
+            if (match.Success)
+            {
+                // checks if there was an epoch, and saves it
+                if (match.Groups["epoch"].Value.Length > 0)
+                {
+                    epoch = Convert.ToInt32(match.Groups["epoch"].Value);
+                }
 
-            // If we have an epoch, then record it.
-            if (match.Groups["epoch"].Value.Length > 0) {
-                epoch = Convert.ToInt32( match.Groups["epoch"].Value );
+                version = match.Groups["version"].Value;
+
+                // goes with the assumption that most versions are of type #.#.#.#
+                _fragments = version.Contains(".")
+                        ? version.Split('.')
+                        : new string[] { version }
+                    ;
+
+                _valid = true;
+
             }
-
-            this.version = match.Groups["version"].Value;
+            // catch the bad case
+            // it's not well formatted, so epoch must be 0, and version is whatever the original string is
+            if(!_valid)
+            {
+                this.version = orig_string;
+            }
         }
 
         override public string ToString() {
@@ -65,57 +85,76 @@ namespace CKAN {
         /// Returns +1 if this is greater than that
         /// Returns  0 if equal.
         /// </summary>
-        public int CompareTo(Version that) {
+        public int CompareTo(Version that)
+        {
+            // check for invalid strings
+            if (Valid)
+            {
+                if (that.Valid)
+                {
+                    // sanity check, see if both are equal
+                    if (that.epoch == epoch && that.version == version)
+                    {
+                        return 0;
+                    }
 
-            if (that.epoch == epoch && that.version == version) {
-                return 0;
-            }
- 
-            // Compare epochs first.
-            if (epoch != that.epoch) {
-                return epoch > that.epoch ?1:-1;
-            }                                  
+                    // Compare epochs first.
+                    if (epoch < that.epoch)
+                    {
+                        return -1;
+                    }
+                    else if (epoch > that.epoch)
+                    {
+                        return 1;
+                    }
 
-            // Epochs are the same. Do the dance described in
-            // https://github.com/KSP-CKAN/CKAN/blob/master/Spec.md#version-ordering
+                    // epocs the same, so examine the version number
 
-            Comparison comp;
-            comp.remainder1 = version;
-            comp.remainder2 = that.version;
+                    // catches the 1.2.3 and 1.2 comparison differences
+                    int maxSize =
+                        _fragments.Length < that._fragments.Length
+                                ? _fragments.Length
+                                : that._fragments.Length
+                        ;
 
-            // Process our strings while there are characters remaining
-            while (comp.remainder1.Length > 0 && comp.remainder2.Length > 0) {
+                    int retVal;
+                    int thisFragInt, thatFragInt;
 
-                // Start by comparing the string parts.
-                comp = StringComp (comp.remainder1, comp.remainder2);
+                    // ingore first since that's the epoch
+                    for (int x = 0; x < maxSize; x++)
+                    {
+                        // attempt int conversion
+                        if (int.TryParse(_fragments[x], out thisFragInt) && int.TryParse(that._fragments[x], out thatFragInt))
+                        {
+                            // check if equal, if not return
+                            if (thisFragInt > thatFragInt) { return 1; }
+                            else if (thisFragInt < thatFragInt) { return -1; }
+                        }
+                        else
+                        {
+                            // not ints, toss exception and default to string compare
+                            retVal = String.Compare(_fragments[x], that._fragments[x]);
+                            if (retVal != 0) { return retVal; }
+                        }
+                    }
 
-                // If we've found a difference, return it.
-                if (comp.compare_to != 0) {
-                    return comp.compare_to;
+                    // whover's got the most segments wins
+                    if (_fragments.Length < that._fragments.Length) { return -1; }
+                    else if (_fragments.Length > that._fragments.Length) { return 1; }
+
+                    // if we're here, they must be equal
+                    else { return 0; }
                 }
-
-                // Otherwise, compare the number parts.
-                // It's okay not to check if our strings are exhausted, because
-                // if they are the exhausted parts will return zero.
-
-                comp = NumComp (comp.remainder1, comp.remainder2);
-
-                // Again, return difference if found.
-                if (comp.compare_to != 0) {
-                    return comp.compare_to;
-                }
+                // this is valid, that's not, so this one wins.
+                else { return 1; }
             }
-
-            // Oh, we've run out of one or both strings.
-            // They *can't* be equal, because we would have detected that in our first test.
-            // So, whichever version is empty first is the smallest. (1.2 < 1.2.3)
-
-            if (comp.remainder1.Length == 0) {
+            else if(that.Valid)
+            {
+                // that's valid, so that wins
                 return -1;
             }
-
-            return 1;
-
+            // defaults to string compare if both aren't valid
+            else { return String.Compare(version, that.version); }
         }
 
         public bool IsEqualTo(Version that) {
@@ -130,99 +169,6 @@ namespace CKAN {
             return CompareTo (that) > 0;
         }
 
-        /// <summary>
-        /// Compare the leading non-numerical parts of two strings
-        /// </summary>
-       
-        internal static Comparison StringComp(string v1, string v2)
-        {
-            var comp = new Comparison {remainder1 = "", remainder2 = ""};
-
-            // Our starting assumptions are that both versions are completely
-            // strings, with no remainder. We'll then check if they're not.
-
-            string str1 = v1;
-            string str2 = v2;
-
-            // Start by walking along our version string until we find a number,
-            // thereby finding the starting string in both cases. If we fall off
-            // the end, then our assumptions made above hold.
-
-            for (int i = 0; i < v1.Length; i++)
-            {
-                if (Char.IsNumber(v1[i]))
-                {
-                    comp.remainder1 = v1.Substring(i);
-                    str1 = v1.Substring(0, i);
-                    break;
-                }
-            }
-
-            for (int i = 0; i < v2.Length; i++)
-            {
-                if (Char.IsNumber(v2[i]))
-                {
-                    comp.remainder2 = v2.Substring(i);
-                    str2 = v2.Substring(0, i);
-                    break;
-                }
-            }
-
-            // Then compare the two strings, and return our comparison state.
-
-            comp.compare_to = String.CompareOrdinal(str1, str2);
-            return comp;
-        }
-
-        /// <summary>
-        /// Compare the leading numerical parts of two strings
-        /// </summary>
-
-        internal static Comparison NumComp(string v1, string v2)
-        {
-            var comp = new Comparison {remainder1 = "", remainder2 = ""};
-
-            int minimum_length1 = 0;
-            for (int i = 0; i < v1.Length; i++)
-            {
-                if (!char.IsNumber(v1[i]))
-                {
-                    comp.remainder1 = v1.Substring(i);
-                    break;
-                }
-
-                minimum_length1++;
-            }
-
-            int minimum_length2 = 0;
-            for (int i = 0; i < v2.Length; i++)
-            {
-                if (!char.IsNumber(v2[i]))
-                {
-                    comp.remainder2 = v2.Substring(i);
-                    break;
-                }
-
-                minimum_length2++;
-            }
-
-            int integer1;
-            int integer2;
-
-            if (!int.TryParse(v1.Substring(0, minimum_length1), out integer1))
-            {
-                integer1 = 0;
-            }
-
-            if (!int.TryParse(v2.Substring(0, minimum_length2), out integer2))
-            {
-                integer2 = 0;
-            }
-
-            comp.compare_to = integer1.CompareTo(integer2);
-            return comp;
-        }
-
         public override bool Equals(object obj)
         {
             var other = obj as Version;
@@ -235,6 +181,26 @@ namespace CKAN {
         int IComparable<Version>.CompareTo(Version other)
         {
             return CompareTo(other);
+        }
+
+        public static bool operator <(Version v1, Version v2)
+        {
+            return v1.CompareTo(v2) < 0;
+        }
+
+        public static bool operator <=(Version v1, Version v2)
+        {
+            return v1.CompareTo(v2) <= 0;
+        }
+
+        public static bool operator >(Version v1, Version v2)
+        {
+            return v1.CompareTo(v2) > 0;
+        }
+
+        public static bool operator >=(Version v1, Version v2)
+        {
+            return v1.CompareTo(v2) >= 0;
         }
     }
 
@@ -271,4 +237,3 @@ namespace CKAN {
         }
     }
 }
-
