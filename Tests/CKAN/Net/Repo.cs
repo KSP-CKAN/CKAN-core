@@ -57,5 +57,14 @@ namespace CKANTests
                 CKAN.Repo.UpdateRegistry(TestData.BadKAN(), registry, ksp.KSP, new NullUser());
             });
         }
+
+        [Test]
+        public void BadKanTarGz()
+        {
+            Assert.DoesNotThrow(delegate
+            {
+                CKAN.Repo.UpdateRegistry(TestData.BadKANTarGz(), registry, ksp.KSP, new NullUser());
+            });
+        }
     }
 }
