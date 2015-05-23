@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
 using log4net;
 using Newtonsoft.Json;
-using System.Text.RegularExpressions;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Schema;
 
 namespace CKAN
 {
@@ -37,7 +40,7 @@ namespace CKAN
     [JsonObject(MemberSerialization.OptIn)]
     public class Module
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof(Module));
+        private static readonly ILog log = LogManager.GetLogger(typeof (Module));
 
         // identifier, license, and version are always required, so we know
         // what we've got.
@@ -168,7 +171,7 @@ namespace CKAN
 
             if (license == null)
             {
-                license = new License ("unknown");
+                license = new License("unknown");
             }
 
             if (@abstract == null)
@@ -246,17 +249,14 @@ namespace CKAN
 
         public bool IsMetapackage
         {
-            get
-            {
-                return (!string.IsNullOrEmpty(this.kind) && this.kind == "metapackage");
-            }
+            get { return (!string.IsNullOrEmpty(this.kind) && this.kind == "metapackage"); }
         }
-
     }
 
     public class CkanModule : Module
     {
-        private static readonly ILog log = LogManager.GetLogger(typeof(CkanModule));
+        private static readonly ILog log = LogManager.GetLogger(typeof (CkanModule));
+
         private static readonly string[] required_fields =
         {
             "spec_version",
@@ -267,43 +267,32 @@ namespace CKAN
             "license",
             "version"
         };
+
         // Only CKAN modules can have install and bundle instructions.
 
         [JsonProperty("install")] public ModuleInstallDescriptor[] install;
         [JsonProperty("spec_version", Required = Required.Always)] public Version spec_version;
 
-        private static bool validate_json_against_schema(string json)
+        static CkanModule()
+        {            
+            var assembly = Assembly.GetExecutingAssembly();            
+            using (var stream = assembly.GetManifestResourceStream(SchemaPath))
+            using (var reader = new StreamReader(stream))
+            {
+                var result = reader.ReadToEnd();
+                MetadataSchema = JSchema.Parse(result);
+            }
+        }
+
+        private static readonly string SchemaPath = "CKAN.CKAN.schema";
+        private static readonly JSchema MetadataSchema;
+
+        private static IList<string> ValidateAgainstSchema(string json)
         {
-
-            log.Debug("In-client JSON schema validation unimplemented.");
-            return true;
-            // due to Newtonsoft Json not supporting v4 of the standard, we can't actually do this :(
-
-            //            if (metadata_schema == null)
-            //            {
-            //                string schema = "";
-            //
-            //                try
-            //                {
-            //                    schema = File.ReadAllText(metadata_schema_path);
-            //                }
-            //                catch (Exception)
-            //                {
-            //                    if (!metadata_schema_missing_warning_fired)
-            //                    {
-            //                        User.Error("Couldn't open metadata schema at \"{0}\", will not validate metadata files",
-            //                            metadata_schema_path);
-            //                        metadata_schema_missing_warning_fired = true;
-            //                    }
-            //
-            //                    return true;
-            //                }
-            //
-            //                metadata_schema = JsonSchema.Parse(schema);
-            //            }
-            //
-            //            JObject obj = JObject.Parse(json);
-            //            return obj.IsValid(metadata_schema);
+            JObject obj = JObject.Parse(json);
+            IList<string> errors;
+            obj.IsValid(MetadataSchema, out errors);
+            return errors;
         }
 
         /// <summary>
@@ -324,7 +313,8 @@ namespace CKAN
                 module = registry.GetModuleByVersion(ident, version);
 
                 if (module == null)
-                    throw new ModuleNotFoundKraken(ident, version, string.Format("Cannot install {0}, version {1} not available", ident, version));
+                    throw new ModuleNotFoundKraken(ident, version,
+                        string.Format("Cannot install {0}, version {1} not available", ident, version));
             }
             else
                 module = registry.LatestAvailable(mod, ksp_version);
@@ -355,10 +345,13 @@ namespace CKAN
         /// </summary>
         public static CkanModule FromJson(string json)
         {
-            if (!validate_json_against_schema(json))
+            var errors = ValidateAgainstSchema(json);
+            if (errors.Any())
             {
-                throw new BadMetadataKraken(null, "Validation against spec failed");
+                var message = "Vailation againt the schema failed.\n" + String.Join("\n  ", errors);
+                throw new BadMetadataKraken(null, message);
             }
+
 
             CkanModule newModule;
 
@@ -379,8 +372,8 @@ namespace CKAN
                         "{0} requires CKAN {1}, we can't read it.",
                         newModule,
                         newModule.spec_version
-                    )
-                );
+                        )
+                    );
             }
 
             // Check everything in the spec if defined.
@@ -404,12 +397,13 @@ namespace CKAN
             // All good! Return module
             return newModule;
         }
+
         public override bool Equals(object obj)
         {
             var other = obj as Module;
             return other != null
-            ? identifier.Equals(other.identifier) && version.Equals(other.version)
-            : base.Equals(obj);
+                ? identifier.Equals(other.identifier) && version.Equals(other.version)
+                : base.Equals(obj);
         }
 
         public override int GetHashCode()
