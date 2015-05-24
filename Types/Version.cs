@@ -80,8 +80,8 @@ namespace CKAN {
             // https://github.com/KSP-CKAN/CKAN/blob/master/Spec.md#version-ordering
 
             Comparison comp;
-            comp.remainder1 = version;
-            comp.remainder2 = that.version;
+            comp.remainder1 = version.ToUpperInvariant();
+            comp.remainder2 = that.version.ToUpperInvariant();
 
             // Process our strings while there are characters remaining
             while (comp.remainder1.Length > 0 && comp.remainder2.Length > 0) {
