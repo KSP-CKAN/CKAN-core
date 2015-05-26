@@ -244,13 +244,7 @@ namespace CKAN
             {
                 return false;
             }
-            foreach (var conflict in mod1.conflicts)
-            {
-                if (!mod2.ProvidesList.Contains(conflict.name))
-                    continue;
-               if(conflict.version_within_bounds(mod2.version)) return true;
-            }
-            return false;
+            return mod1.conflicts.Any(conflict => mod2.ProvidesList.Contains(conflict.name) && conflict.version_within_bounds(mod2.version));
         }
 
         /// <summary>
