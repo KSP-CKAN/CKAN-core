@@ -231,12 +231,13 @@ namespace CKAN
 
                 if (modlist.ContainsKey(dep_name))
                 {
-                    if (descriptor.version_within_bounds(modlist[dep_name].version))                    
+                    if (descriptor.version_within_bounds(modlist[dep_name].version))
                         continue;
                     
                     //TODO Ideally we could check here if it can be replaced by the version we want. 
-                    throw new InconsistentKraken(string.Format("A certain version of {0} is needed. " +
-                                                               "However a incompatible version is in the resolver", dep_name));
+                    throw new InconsistentKraken(
+                        $"{dep_name} requries a version {descriptor.RequiredVersion}. " +
+                        $"However a incompatible version, {modlist[dep_name].version}, is in the resolver");
                     
                 }
 
@@ -245,8 +246,9 @@ namespace CKAN
                     if(descriptor.version_within_bounds(registry.InstalledVersion(dep_name)))
                         continue;
                     //TODO Ideally we could check here if it can be replaced by the version we want. 
-                    throw new InconsistentKraken(string.Format("A certain version of {0} is needed. " +
-                                                           "However a incompatible version is already installed", dep_name));
+                    throw new InconsistentKraken(
+                        $"{dep_name} requries a version {descriptor.RequiredVersion}. " +
+                        $"However a incompatible version, {modlist[dep_name].version} is already installed");
                 }
                 
 
