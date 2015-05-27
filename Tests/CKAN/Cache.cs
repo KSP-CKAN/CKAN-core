@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using NUnit.Framework;
 
 namespace CKANTests
@@ -7,7 +8,8 @@ namespace CKANTests
     [TestFixture]
     public class Cache
     {
-        private readonly string cache_dir = Path.Combine(Tests.TestData.DataDir(),"cache_test");
+        private readonly string cache_dir = Path.Combine(Tests.TestData.DataDir(), "cache_test");
+        private readonly string cache_dir_move_test = Path.Combine(Tests.TestData.DataDir(), "cache_test_moved");
 
         private CKAN.NetFileCache cache;
 
@@ -22,6 +24,11 @@ namespace CKANTests
         public void RemoveCache()
         {
             Directory.Delete(cache_dir, true);
+
+            if (Directory.Exists(cache_dir_move_test))
+            {
+                Directory.Delete(cache_dir_move_test, true);
+            }
         }
 
         [Test]
@@ -79,6 +86,105 @@ namespace CKANTests
             cache.Remove(url);
 
             Assert.IsFalse(cache.IsCached(url));
+        }
+
+        [Test]
+        public void MoveCacheFailsForNull()
+        {
+            Uri url = new Uri("http://example.com/");
+            string file = Tests.TestData.DogeCoinFlagZip();
+
+            // Cache the file.
+            cache.Store(url, file);
+
+            // Move the cache.
+            Assert.IsFalse(cache.MoveDefaultCache(null));
+        }
+
+        [Test]
+        public void MoveCacheFailsForEmptyOrWhiteSpace()
+        {
+            Uri url = new Uri("http://example.com/");
+            string file = Tests.TestData.DogeCoinFlagZip();
+
+            // Cache the file.
+            cache.Store(url, file);
+
+            // Move the cache.
+            Assert.IsFalse(cache.MoveDefaultCache(""));
+            Assert.IsFalse(cache.MoveDefaultCache(" "));
+            Assert.IsFalse(cache.MoveDefaultCache("                                 "));
+        }
+
+        [DllImport ("libc", EntryPoint = "chmod", SetLastError = true)]
+        private static extern int sys_chmod (string path, uint mode);
+
+        private static uint S_IRUSR = 0000400;
+        private static uint S_IWUSR = 0000200;
+        private static uint S_IXUSR = 0000100;
+
+        [Test]
+        public void MoveCacheFailsForNoAccess()
+        {
+            // The following will only work on POSIX systems.
+            if (CKAN.Platform.IsWindows)
+            {
+                Assert.IsTrue(false);
+            }
+
+            Uri url = new Uri("http://example.com/");
+            string file = Tests.TestData.DogeCoinFlagZip();
+
+            // Cache the file.
+            cache.Store(url, file);
+
+            // Make sure the new directory is created.
+            Directory.CreateDirectory(cache_dir_move_test);
+
+            // Change the permissions (Disable read/write).
+            Assert.AreEqual(sys_chmod(cache_dir_move_test, S_IXUSR), 0);
+
+            // Move the cache.
+            Assert.IsFalse(cache.MoveDefaultCache(cache_dir_move_test));
+
+            // Change the permissions (Enable read).
+            Assert.AreEqual(sys_chmod(cache_dir_move_test, S_IRUSR), 0);
+
+            // Move the cache.
+            Assert.IsFalse(cache.MoveDefaultCache(cache_dir_move_test));
+
+            // Change the permissions (Enable write).
+            Assert.AreEqual(sys_chmod(cache_dir_move_test, S_IWUSR), 0);
+
+            // Move the cache.
+            Assert.IsFalse(cache.MoveDefaultCache(cache_dir_move_test));
+
+            // Enable all permissions.
+            Assert.AreEqual(sys_chmod(cache_dir_move_test, S_IRUSR | S_IWUSR | S_IXUSR), 0);
+
+            // Move the cache.
+            Assert.IsTrue(cache.MoveDefaultCache(cache_dir_move_test));
+        }
+
+        [Test]
+        public void MoveCache()
+        {
+            Uri url = new Uri("http://example.com/");
+            string file = Tests.TestData.DogeCoinFlagZip();
+
+            // Cache the file.
+            string path = cache.Store(url, file);
+
+            // Check that file exists in the old cache dir.
+            Assert.IsTrue(File.Exists(path));
+
+            // Move the cache.
+            Assert.IsTrue(cache.MoveDefaultCache(cache_dir_move_test));
+
+            // Make sure we still have the file cached.
+            string new_path = cache.GetCachedFilename(url);
+            Assert.IsTrue(File.Exists(new_path));
+            Assert.IsFalse(File.Exists(path));
         }
 
         [Test]
