@@ -189,6 +189,44 @@ namespace CKAN
             return null;
         }
 
+        public bool MoveDefaultCache(string new_cache_path)
+        {
+            // Check input.
+            if (string.IsNullOrWhiteSpace(new_cache_path))
+            {
+                return false;
+            }
+
+            // Create the new path if it doesn't exists.
+            if (!Directory.Exists(new_cache_path))
+            {
+                Directory.CreateDirectory(new_cache_path);
+            }
+
+            // TODO: Start a new transaction.
+
+            // Get a list of all the files in the old cache and move them over.
+            var files = Directory.GetFiles(cache_path);
+
+            foreach (string file in files)
+            {
+                string new_file_path = Path.Combine(new_cache_path, Path.GetFileName(file));
+
+                tx_file.Copy(file, new_file_path);
+            }
+
+            // Store the new location in the registry and internally.
+            Win32Registry registry = new Win32Registry();
+            registry.SetCachePath(new_cache_path);
+            cache_path = new_cache_path;
+
+            // Clean the old directory of files we moved.
+            foreach (string file in files)
+            {
+                tx_file.Delete(file);
+            }
+        }
+
         /// <summary>
         /// Stores the results of a given URL in the cache.
         /// Description is appended to the file hash when saving. If not present, the filename will be used.
