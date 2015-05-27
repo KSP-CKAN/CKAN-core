@@ -203,6 +203,36 @@ namespace CKAN
                 Directory.CreateDirectory(new_cache_path);
             }
 
+            // Check that we have list permission.
+            try
+            {
+                Directory.GetFiles(new_cache_path);
+            }
+            catch(System.UnauthorizedAccessException e)
+            {
+                return false;
+            }
+                
+            string test_file_path = Path.Combine(new_cache_path, "testing_file_for_CKAN");
+
+            // Check that we have read/write permission.
+            try
+            {
+                FileStream a = File.Create(test_file_path);
+                a.WriteByte(0);
+                a.Close();
+
+                a = File.OpenRead(test_file_path);
+                a.ReadByte();
+                a.Close();
+
+                File.Delete(test_file_path);
+            }
+            catch(System.UnauthorizedAccessException e)
+            {
+                return false;
+            }
+
             // TODO: Start a new transaction.
 
             // Get a list of all the files in the old cache and move them over.
@@ -212,7 +242,7 @@ namespace CKAN
             {
                 string new_file_path = Path.Combine(new_cache_path, Path.GetFileName(file));
 
-                tx_file.Copy(file, new_file_path);
+                tx_file.Copy(file, new_file_path, true);
             }
 
             // Store the new location in the registry and internally.
@@ -225,6 +255,8 @@ namespace CKAN
             {
                 tx_file.Delete(file);
             }
+
+            return true;
         }
 
         /// <summary>
