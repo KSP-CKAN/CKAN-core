@@ -8,8 +8,6 @@ using log4net;
 
 namespace CKAN
 {
-
-
     /*
      * This class allows us to cache downloads by URL
      * It works using two directories - one to store downloads in-progress, and one to commit finished downloads
@@ -25,25 +23,89 @@ namespace CKAN
      */
     public class NetFileCache
     {
-        private string cachePath;
+        private string cache_path;
         private static readonly TxFileManager tx_file = new TxFileManager();
         private static readonly ILog log = LogManager.GetLogger(typeof (NetFileCache));
    
-        public NetFileCache(string _cachePath)
+        public NetFileCache(string requested_cache_path = null)
         {
-            // Basic validation, our cache has to exist.
-
-            if (!Directory.Exists(_cachePath))
+            // Check the input.
+            if (!string.IsNullOrWhiteSpace(requested_cache_path))
             {
-                throw new DirectoryNotFoundKraken(_cachePath, "Cannot find cache directory");
-            }
+                // Basic validation, our cache has to exist.
+                if (!Directory.Exists(requested_cache_path))
+                {
+                    throw new DirectoryNotFoundKraken(requested_cache_path, "Cannot find cache directory, please create it when calling the cache with a specific path.");
+                }
 
-            cachePath = _cachePath;
+                cache_path = requested_cache_path;
+            }
+            else
+            {
+                // No specific cache requested, fall back to the global from the registry.
+                cache_path = GetCachePathFromRegistry();
+
+                // If no path was stored in the registry, get the system default.
+                if (string.IsNullOrWhiteSpace(cache_path))
+                {
+                    cache_path = GetSystemDefaultCachePath();
+                }
+            }
         }
 
         public string GetCachePath()
         {
-            return cachePath;
+            return cache_path;
+        }
+
+        /// <summary>
+        /// Gets the cache path from registry.
+        /// </summary>
+        /// <returns>The cache path from registry.</returns>
+        public string GetCachePathFromRegistry()
+        {
+            // Create a new instance of the registry and request the cache path.
+            Win32Registry registry = new Win32Registry();
+
+            return registry.GetCachePath();
+        }
+
+        /// <summary>
+        /// Gets the system default cache path.
+        /// </summary>
+        /// <returns>The system default cache path.</returns>
+        public string GetSystemDefaultCachePath()
+        {
+            string base_directory = null;
+
+            // Check which platform we are on, as the path depends on this.
+            if (!Platform.IsWindows)
+            {
+                // Linux or OS X, attempt to use the XDG standard for getting the path.
+                base_directory = Environment.GetEnvironmentVariable("XDG_CACHE_HOME");
+
+                // If the above did not work, fall back to "~/.local/".
+                if (string.IsNullOrWhiteSpace(base_directory))
+                {
+                    base_directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), ".local/share");
+                }
+            }
+            else
+            {
+                // Windows.
+                base_directory = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            }
+
+            // Append the CKAN folder structure.
+            string directory = Path.Combine(base_directory, "CKAN/downloads");
+
+            // Create the folder if it doesn't exist.
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            return directory;
         }
 
         // returns true if a url is already in the cache
@@ -80,7 +142,7 @@ namespace CKAN
 
             string hash = CreateURLHash(url);
 
-            foreach (string file in Directory.GetFiles(cachePath))
+            foreach (string file in Directory.GetFiles(cache_path))
             {
                 string filename = Path.GetFileName(file);
                 if (filename.StartsWith(hash))
@@ -148,7 +210,7 @@ namespace CKAN
             description = description ?? Path.GetFileName(path);
 
             string fullName = String.Format("{0}-{1}", hash, Path.GetFileName(description));
-            string targetPath = Path.Combine(cachePath, fullName);
+            string targetPath = Path.Combine(cache_path, fullName);
 
             log.DebugFormat("Storing {0} in {1}", path, targetPath);
 
