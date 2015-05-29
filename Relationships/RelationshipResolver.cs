@@ -236,12 +236,7 @@ namespace CKAN
 
                 if (candidates.Count == 0)
                 {
-                    if (!soft_resolve)
-                    {
-                        log.ErrorFormat("Dependency on {0} found, but nothing provides it.", dep_name);
-                        throw new ModuleNotFoundKraken(dep_name);
-                    }
-                    log.InfoFormat("{0} is recommended/suggested, but nothing provides it.", dep_name);
+                    UnmatchedDependancy(soft_resolve, dep_name);
                     continue;
                 }
                 if (candidates.Count > 1)
@@ -257,41 +252,66 @@ namespace CKAN
                     throw new TooManyModsProvideKraken(dep_name, candidates);
                 }
 
-                CkanModule candidate = candidates[0];
+                bool found_candidate = false;                
+                foreach (var candidate in candidates)
+                {                    
+                    // Finally, check our candidate against everything which might object
+                    // to it being installed; that's all the mods which are fixed in our
+                    // list thus far, as well as everything on the system.
+                    var fixed_mods = new HashSet<Module>(modlist.Values);
+                    fixed_mods.UnionWith(registry.InstalledModules.Select(x=>x.Module));
 
-                // Finally, check our candidate against everything which might object
-                // to it being installed; that's all the mods which are fixed in our
-                // list thus far, as well as everything on the system.
-
-                var fixed_mods = new HashSet<Module>(modlist.Values);
-                fixed_mods.UnionWith(registry.InstalledModules.Select(x => x.Module));
-
-                var conflicting_mod = fixed_mods.FirstOrDefault(mod => mod.ConflictsWith(candidate));
-                if (conflicting_mod == null)
-                {
-                    // Okay, looks like we want this one. Adding.
-                    Add(candidate, reason);
-                    Resolve(candidate, options);
-                }
-                else if (soft_resolve)
-                {
-                    log.InfoFormat("{0} would cause conflicts, excluding it from consideration", candidate);
-                }
-                else
-                {
-                    if (options.procede_with_inconsistencies)
+                    var conflicting_mod = fixed_mods.FirstOrDefault(mod => mod.ConflictsWith(candidate));
+                    if (conflicting_mod == null)
+                    {                        
+                        try
+                        {
+                            Resolve(candidate, options);
+                            Add(candidate, reason);
+                            found_candidate = true;
+                            break;
+                        }
+                        catch (ModuleNotFoundKraken)
+                        {
+                            //Candidate is a bust.                             
+                        }
+                    }
+                    else if (soft_resolve)
                     {
-                        Add(candidate, reason);
-                        conflicts.Add(new KeyValuePair<Module, Module>(conflicting_mod, candidate));
-                        conflicts.Add(new KeyValuePair<Module, Module>(candidate, conflicting_mod));
+                        log.InfoFormat("{0} would cause conflicts, excluding it from consideration", candidate);
                     }
                     else
                     {
-                        throw new InconsistentKraken(string.Format("{0} conflicts with {1}, can't install both.", conflicting_mod,
-                            candidate));
+                        if (options.procede_with_inconsistencies)
+                        {
+                            Add(candidate, reason);
+                            conflicts.Add(new KeyValuePair<Module, Module>(conflicting_mod, candidate));
+                            conflicts.Add(new KeyValuePair<Module, Module>(candidate, conflicting_mod));
+                        }
+                        else
+                        {
+                            throw new InconsistentKraken(string.Format("{0} conflicts with {1}, can't install both.",
+                                conflicting_mod,
+                                candidate));
+                        }
                     }
                 }
+
+                if (!found_candidate)
+                {
+                    UnmatchedDependancy(soft_resolve, dep_name);
+                }
             }
+        }
+
+        private static void UnmatchedDependancy(bool soft_resolve, string dep_name)
+        {
+            if (!soft_resolve)
+            {
+                log.ErrorFormat("Dependency on {0} found, but nothing provides it.", dep_name);
+                throw new ModuleNotFoundKraken(dep_name);
+            }
+            log.InfoFormat("{0} is recommended/suggested, but nothing provides it.", dep_name);
         }
 
         /// <summary>

@@ -480,7 +480,46 @@ namespace Tests.CKAN.Relationships
                 options,
                 registry,
                 null));
+        }
 
+        [Test]
+        public void WhenDependancyMatchedByMultipleProvides_CompatibleProvideSelected()
+        {
+            var multi = "multi";
+            var depender = generator.GeneratorRandomModule(depends: new List<RelationshipDescriptor>
+            {
+                new RelationshipDescriptor {name = multi}
+            });
+            var providerA = generator.GeneratorRandomModule(provides: new List<string> {multi},
+                depends: new List<RelationshipDescriptor>
+                {
+                    new RelationshipDescriptor {name = "invalid"}
+                });
+            var providerB = generator.GeneratorRandomModule(provides: new List<string> { multi });
+            AddToRegistry(depender,providerA,providerB);
+            options.without_toomanyprovides_kraken = true;
+            var resolver = new RelationshipResolver(new List<CkanModule>{depender}, options, registry, null);
+            
+            CollectionAssert.Contains(resolver.ModList(),providerB);            
+        }
+
+        [Test]
+        public void CircularDependancies()
+        {
+            var modb_indent = "modb";            
+            var moda = generator.GeneratorRandomModule(depends: new List<RelationshipDescriptor>
+            {
+                new RelationshipDescriptor {name = modb_indent}
+            });
+            var modb = generator.GeneratorRandomModule(identifier:modb_indent,depends: new List<RelationshipDescriptor>
+                {
+                    new RelationshipDescriptor {name = moda.identifier}
+                });
+            
+            AddToRegistry(moda,modb);
+            options.without_toomanyprovides_kraken = true;
+            var resolver = new RelationshipResolver(new List<CkanModule> { moda }, options, registry, null);            
+            CollectionAssert.Contains(resolver.ModList(), modb);
         }
 
         [Test]
