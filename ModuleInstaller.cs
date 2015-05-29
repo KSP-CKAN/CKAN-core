@@ -152,7 +152,7 @@ namespace CKAN
             NetAsyncDownloader downloader = null
         )
         {
-            var resolver = new RelationshipResolver(modules, options, registry_manager.registry, ksp.Version());
+            var resolver = new RelationshipResolver(modules, options, registry_manager.registry, null);
             List<CkanModule> modsToInstall = resolver.ModList();
 
             InstallList(modsToInstall, options, downloader = null);
@@ -174,7 +174,7 @@ namespace CKAN
             NetAsyncDownloader downloader = null
         )
         {            
-            var resolver = new RelationshipResolver(modules, options, registry_manager.registry, ksp.Version());
+            var resolver = new RelationshipResolver(modules, options, registry_manager.registry, null);
             List<CkanModule> modsToInstall = resolver.ModList();
             List<CkanModule> downloads = new List<CkanModule> (); 
 

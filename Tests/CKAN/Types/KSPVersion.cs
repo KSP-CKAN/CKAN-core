@@ -37,7 +37,7 @@ namespace CKANTests
             var vshort = new CKAN.KSPVersion("0.23");
             var vlong = new CKAN.KSPVersion("0.23.5");
 
-            Assert.AreSame(any.ToString(), null);
+            Assert.AreSame(any.ToString(), "Any");
             Assert.AreSame(vshort.ToString(), "0.23");
             Assert.AreSame(vlong.ToString(), "0.23.5");
         }
