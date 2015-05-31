@@ -6,7 +6,6 @@ namespace CKAN
 {
     public interface IWin32Registry
     {
-
         string AutoStartInstance { get; set; }
         void SetRegistryToInstances(SortedList<string, KSP> instances, string auto_start_instance);
         IEnumerable<Tuple<string, string>> GetInstances();
@@ -20,6 +19,7 @@ namespace CKAN
         {
             ConstructKey();
         }
+
         private int InstanceCount
         {
             get { return GetRegistryValue(@"KSPInstanceCount", 0); }
@@ -47,13 +47,37 @@ namespace CKAN
             {                
                 SetInstanceKeysTo(instance.number, instance.name, instance.path);                
             }
-
-            
         }
 
         public IEnumerable<Tuple<string, string>> GetInstances()
         {
             return Enumerable.Range(0, InstanceCount).Select(GetInstance).ToList();
+        }
+
+        /// <summary>
+        /// Gets the global downloads cache path.
+        /// </summary>
+        /// <returns>The cache path.</returns>
+        public string GetCachePath()
+        {
+            return GetRegistryValue(@"GlobalCache", String.Empty);
+        }
+
+        /// <summary>
+        /// Store the global cache path in the registry.
+        /// 
+        /// Allows setting the path to an empty string to disable the global cache.
+        /// </summary>
+        /// <param name="cache_path">Cache path.</param>
+        public void SetCachePath(string cache_path)
+        {
+            // Do not write null to the registry.
+            if (cache_path == null)
+            {
+                cache_path = string.Empty;
+            }
+
+            SetRegistryValue(@"GlobalCache", cache_path);
         }
 
         private void ConstructKey()
