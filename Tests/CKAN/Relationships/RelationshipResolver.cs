@@ -65,6 +65,29 @@ namespace Tests.CKAN.Relationships
         }
 
         [Test]
+        public void RemoveModsFromInstalledList_RemovedModsDoNotConflict()
+        {
+            var list = new List<string>();
+            var mod_a = generator.GeneratorRandomModule();
+            var mod_b = generator.GeneratorRandomModule(conflicts: new List<RelationshipDescriptor>
+            {
+                new RelationshipDescriptor {name=mod_a.identifier}
+            });
+
+            list.Add(mod_a.identifier);
+            list.Add(mod_b.identifier);
+            AddToRegistry(mod_a, mod_b);
+            registry.RegisterModule(mod_a,new string[]{},null);
+
+
+            var resolver = new RelationshipResolver(options, registry, null);
+            resolver.RemoveModsFromInstalledList(new[] {mod_a});
+            resolver.AddModulesToInstall(new[] { mod_b} );
+            Assert.IsTrue(resolver.IsConsistant);
+
+        }
+
+        [Test]
         [Category("Version")]
         [Explicit("Versions relationships not implemented")]
         public void Constructor_WithConflictingModulesVersion_Throws()
@@ -748,7 +771,7 @@ namespace Tests.CKAN.Relationships
 
             var relationship_resolver = new RelationshipResolver(list, options, registry, null);
             var reason = relationship_resolver.ReasonFor(mod);
-            Assert.That(reason,Is.AssignableTo<Relationship.UserRequested>());
+            Assert.That(reason,Is.AssignableTo<SelectionReason.UserRequested>());
         }
 
         [Test]
@@ -763,7 +786,7 @@ namespace Tests.CKAN.Relationships
             options.with_all_suggests = true;
             var relationship_resolver = new RelationshipResolver(list, options, registry, null);
             var reason = relationship_resolver.ReasonFor(sugested);
-            Assert.That(reason, Is.AssignableTo<Relationship.Suggested>());
+            Assert.That(reason, Is.AssignableTo<SelectionReason.Suggested>());
             Assert.That(reason.Parent,Is.EqualTo(mod));
         }
 
@@ -787,11 +810,11 @@ namespace Tests.CKAN.Relationships
             options.with_recommends = true;
             var relationship_resolver = new RelationshipResolver(list, options, registry, null);
             var reason = relationship_resolver.ReasonFor(recommendedA);
-            Assert.That(reason, Is.AssignableTo<Relationship.Recommended>());
+            Assert.That(reason, Is.AssignableTo<SelectionReason.Recommended>());
             Assert.That(reason.Parent, Is.EqualTo(sugested));
 
             reason = relationship_resolver.ReasonFor(recommendedB);
-            Assert.That(reason, Is.AssignableTo<Relationship.Recommended>());
+            Assert.That(reason, Is.AssignableTo<SelectionReason.Recommended>());
             Assert.That(reason.Parent, Is.EqualTo(sugested));
         }
 
