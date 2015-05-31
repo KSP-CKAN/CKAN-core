@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using ChinhDo.Transactions;
 using log4net;
 using Newtonsoft.Json;
@@ -130,20 +129,7 @@ namespace CKAN
 
         private string Serialize()
         {
-            StringBuilder sb = new StringBuilder();
-            StringWriter sw = new StringWriter(sb);
-
-            using (JsonTextWriter writer = new JsonTextWriter (sw))
-            {
-                writer.Formatting = Formatting.Indented;
-                writer.Indentation = 4;
-                writer.IndentChar = ' ';
-
-                JsonSerializer serializer = new JsonSerializer();
-                serializer.Serialize(writer, registry);
-            }
-
-            return sw.ToString() + Environment.NewLine;
+            return JsonConvert.SerializeObject(registry);
         }
 
         private string SerializeCurrentInstall()
