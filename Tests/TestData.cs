@@ -239,6 +239,12 @@ namespace Tests
             return new Uri("../../../Tests/DATA/CKAN-meta-badkan.zip", UriKind.Relative);
         }
 
+        // Same as BadKAN above, just repacked as tar.gz.
+        public static Uri BadKANTarGz()
+        {
+            return new Uri("../../../Tests/DATA/CKAN-meta-badkan.tar.gz", UriKind.Relative);
+        }
+
         public static string good_ksp_dir()
         {
             return Path.Combine(DataDir(), "KSP/KSP-0.25");
